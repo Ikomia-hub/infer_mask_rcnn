@@ -1,0 +1,12 @@
+#ifndef MASKRCNN_GLOBAL_H
+#define MASKRCNN_GLOBAL_H
+
+#include <QtCore/qglobal.h>
+
+#if defined(MASKRCNN_LIBRARY)
+#  define MASKRCNNSHARED_EXPORT Q_DECL_EXPORT
+#else
+#  define MASKRCNNSHARED_EXPORT Q_DECL_IMPORT
+#endif
+
+#endif // MASKRCNN_GLOBAL_H
