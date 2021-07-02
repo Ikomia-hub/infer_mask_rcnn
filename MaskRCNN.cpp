@@ -5,16 +5,16 @@ CMaskRCNN::CMaskRCNN() : COcvDnnProcess()
 {
     m_pParam = std::make_shared<CMaskRCNNParam>();
     setOutputDataType(IODataType::IMAGE_LABEL, 0);
-    addOutput(std::make_shared<CImageProcessIO>());
-    addOutput(std::make_shared<CGraphicsProcessOutput>());
+    addOutput(std::make_shared<CImageIO>());
+    addOutput(std::make_shared<CGraphicsOutput>());
 }
 
 CMaskRCNN::CMaskRCNN(const std::string& name, const std::shared_ptr<CMaskRCNNParam> &pParam): COcvDnnProcess(name)
 {
     m_pParam = std::make_shared<CMaskRCNNParam>(*pParam);
     setOutputDataType(IODataType::IMAGE_LABEL, 0);
-    addOutput(std::make_shared<CImageProcessIO>());
-    addOutput(std::make_shared<CGraphicsProcessOutput>());
+    addOutput(std::make_shared<CImageIO>());
+    addOutput(std::make_shared<CGraphicsOutput>());
 }
 
 size_t CMaskRCNN::getProgressSteps()
@@ -47,7 +47,7 @@ std::vector<cv::String> CMaskRCNN::getOutputsNames() const
 void CMaskRCNN::run()
 {
     beginTaskRun();
-    auto pInput = std::dynamic_pointer_cast<CImageProcessIO>(getInput(0));
+    auto pInput = std::dynamic_pointer_cast<CImageIO>(getInput(0));
     auto pParam = std::dynamic_pointer_cast<CMaskRCNNParam>(m_pParam);
 
     if(pInput == nullptr || pParam == nullptr)
@@ -118,10 +118,10 @@ void CMaskRCNN::manageOutput(std::vector<cv::Mat> &netOutputs)
 void CMaskRCNN::manageMaskRCNNOutput(std::vector<cv::Mat> &netOutputs)
 {
     auto pParam = std::dynamic_pointer_cast<CMaskRCNNParam>(m_pParam);
-    auto pInput = std::dynamic_pointer_cast<CImageProcessIO>(getInput(0));
+    auto pInput = std::dynamic_pointer_cast<CImageIO>(getInput(0));
 
     //Graphics output
-    auto pGraphicsOutput = std::dynamic_pointer_cast<CGraphicsProcessOutput>(getOutput(2));
+    auto pGraphicsOutput = std::dynamic_pointer_cast<CGraphicsOutput>(getOutput(2));
     pGraphicsOutput->setNewLayer(getName());
     pGraphicsOutput->setImageIndex(1);
 
@@ -177,7 +177,7 @@ void CMaskRCNN::manageMaskRCNNOutput(std::vector<cv::Mat> &netOutputs)
         }
     }
 
-    auto pOutput = std::dynamic_pointer_cast<CImageProcessIO>(getOutput(0));
+    auto pOutput = std::dynamic_pointer_cast<CImageIO>(getOutput(0));
     if(pOutput)
         pOutput->setImage(labelImg);
 }

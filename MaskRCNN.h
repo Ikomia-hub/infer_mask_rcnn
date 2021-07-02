@@ -71,7 +71,7 @@ class MASKRCNNSHARED_EXPORT CMaskRCNN: public COcvDnnProcess
 //----------------------------//
 //----- CMaskRCNNFactory -----//
 //----------------------------//
-class MASKRCNNSHARED_EXPORT CMaskRCNNFactory : public CProcessFactory
+class MASKRCNNSHARED_EXPORT CMaskRCNNFactory : public CTaskFactory
 {
     public:
 
@@ -102,7 +102,7 @@ class MASKRCNNSHARED_EXPORT CMaskRCNNFactory : public CProcessFactory
             m_info.m_keywords = "deep,learning,segmentation,semantic,tensorflow,Faster R-CNN";
         }
 
-        virtual ProtocolTaskPtr create(const ProtocolTaskParamPtr& pParam) override
+        virtual WorkflowTaskPtr create(const WorkflowTaskParamPtr& pParam) override
         {
             auto paramPtr = std::dynamic_pointer_cast<CMaskRCNNParam>(pParam);
             if(paramPtr != nullptr)
@@ -110,7 +110,7 @@ class MASKRCNNSHARED_EXPORT CMaskRCNNFactory : public CProcessFactory
             else
                 return create();
         }
-        virtual ProtocolTaskPtr create() override
+        virtual WorkflowTaskPtr create() override
         {
             auto paramPtr = std::make_shared<CMaskRCNNParam>();
             assert(paramPtr != nullptr);
@@ -129,7 +129,7 @@ class MASKRCNNSHARED_EXPORT CMaskRCNNWidget: public COcvWidgetDnnCore
         {
             init();
         }
-        CMaskRCNNWidget(ProtocolTaskParamPtr pParam, QWidget *parent = Q_NULLPTR): COcvWidgetDnnCore(pParam, parent)
+        CMaskRCNNWidget(WorkflowTaskParamPtr pParam, QWidget *parent = Q_NULLPTR): COcvWidgetDnnCore(pParam, parent)
         {
             m_pParam = std::dynamic_pointer_cast<CMaskRCNNParam>(pParam);
             init();
@@ -180,7 +180,7 @@ class MASKRCNNSHARED_EXPORT CMaskRCNNWidgetFactory : public CWidgetFactory
             m_name = QObject::tr("Mask RCNN").toStdString();
         }
 
-        virtual ProtocolTaskWidgetPtr   create(ProtocolTaskParamPtr pParam)
+        virtual WorkflowTaskWidgetPtr   create(WorkflowTaskParamPtr pParam)
         {
             return std::make_shared<CMaskRCNNWidget>(pParam);
         }
@@ -197,7 +197,7 @@ class MASKRCNNSHARED_EXPORT CMaskRCNNInterface : public QObject, public CPluginP
 
     public:
 
-        virtual std::shared_ptr<CProcessFactory> getProcessFactory()
+        virtual std::shared_ptr<CTaskFactory> getProcessFactory()
         {
             return std::make_shared<CMaskRCNNFactory>();
         }
