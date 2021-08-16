@@ -137,7 +137,7 @@ class MASKRCNNSHARED_EXPORT CMaskRCNNWidget: public COcvWidgetDnnCore
 
     private:
 
-        void init() override
+        void init()
         {
             if(m_pParam == nullptr)
                 m_pParam = std::make_shared<CMaskRCNNParam>();
@@ -161,10 +161,11 @@ class MASKRCNNSHARED_EXPORT CMaskRCNNWidget: public COcvWidgetDnnCore
                 assert(pParam);
                 pParam->m_maskThreshold = val;
             });
-            connect(m_pApplyBtn, &QPushButton::clicked, [=]
-            {
-                emit doApplyProcess(m_pParam);
-            });
+        }
+
+        void onApply() override
+        {
+            emit doApplyProcess(m_pParam);
         }
 };
 
