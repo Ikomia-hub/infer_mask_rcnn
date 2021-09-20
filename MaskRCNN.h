@@ -77,7 +77,7 @@ class MASKRCNNSHARED_EXPORT CMaskRCNNFactory : public CTaskFactory
 
         CMaskRCNNFactory()
         {
-            m_info.m_name = QObject::tr("Mask RCNN").toStdString();
+            m_info.m_name = "infer_mask_rcnn";
             m_info.m_shortDescription = QObject::tr("Semantic segmentation based on Faster R-CNN method").toStdString();
             m_info.m_description = QObject::tr("We present a conceptually simple, flexible, and general framework for object instance segmentation. "
                                                "Our approach efficiently detects objects in an image while simultaneously generating a high-quality segmentation mask for each instance. "
@@ -178,7 +178,7 @@ class MASKRCNNSHARED_EXPORT CMaskRCNNWidgetFactory : public CWidgetFactory
 
         CMaskRCNNWidgetFactory()
         {
-            m_name = QObject::tr("Mask RCNN").toStdString();
+            m_name = "infer_mask_rcnn";
         }
 
         virtual WorkflowTaskWidgetPtr   create(WorkflowTaskParamPtr pParam)
