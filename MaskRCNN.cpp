@@ -24,7 +24,15 @@ size_t CMaskRCNN::getProgressSteps()
 
 int CMaskRCNN::getNetworkInputSize() const
 {
-    return 800;
+    int size = 800;
+
+    // Trick to overcome OpenCV issue around CUDA context and multithreading
+    // https://github.com/opencv/opencv/issues/20566
+    auto pParam = std::dynamic_pointer_cast<CMaskRCNNParam>(m_pParam);
+    if(pParam->m_backend == cv::dnn::DNN_BACKEND_CUDA && m_bNewInput)
+        size = size + (m_sign * 32);
+
+    return size;
 }
 
 double CMaskRCNN::getNetworkInputScaleFactor() const
@@ -106,6 +114,14 @@ void CMaskRCNN::run()
     emit m_signalHandler->doProgress();
 
     endTaskRun();
+
+    // Trick to overcome OpenCV issue around CUDA context and multithreading
+    // https://github.com/opencv/opencv/issues/20566
+    if(pParam->m_backend == cv::dnn::DNN_BACKEND_CUDA && m_bNewInput)
+    {
+        m_sign *= -1;
+        m_bNewInput = false;
+    }
 }
 
 void CMaskRCNN::manageOutput(std::vector<cv::Mat> &netOutputs)
