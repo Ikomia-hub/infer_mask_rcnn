@@ -7,6 +7,7 @@ CMaskRCNN::CMaskRCNN() : COcvDnnProcess()
     setOutputDataType(IODataType::IMAGE_LABEL, 0);
     addOutput(std::make_shared<CImageIO>());
     addOutput(std::make_shared<CGraphicsOutput>());
+    addOutput(std::make_shared<CBlobMeasureIO>());
 }
 
 CMaskRCNN::CMaskRCNN(const std::string& name, const std::shared_ptr<CMaskRCNNParam> &pParam): COcvDnnProcess(name)
@@ -15,6 +16,7 @@ CMaskRCNN::CMaskRCNN(const std::string& name, const std::shared_ptr<CMaskRCNNPar
     setOutputDataType(IODataType::IMAGE_LABEL, 0);
     addOutput(std::make_shared<CImageIO>());
     addOutput(std::make_shared<CGraphicsOutput>());
+    addOutput(std::make_shared<CBlobMeasureIO>());
 }
 
 size_t CMaskRCNN::getProgressSteps()
@@ -83,6 +85,11 @@ void CMaskRCNN::run()
                 throw CException(CoreExCode::INVALID_PARAMETER, "Failed to load network", __func__, __FILE__, __LINE__);
 
             pParam->m_bUpdate = false;
+
+            if(m_classNames.empty())
+                readClassNames();
+
+            generateColors();
         }
 
         int size = getNetworkInputSize();
@@ -105,9 +112,6 @@ void CMaskRCNN::run()
         throw CException(CoreExCode::INVALID_PARAMETER, e.what(), __func__, __FILE__, __LINE__);
     }
 
-    if(m_classNames.empty())
-        readClassNames();
-
     emit m_signalHandler->doProgress();
 
     manageOutput(netOutputs);
@@ -128,7 +132,8 @@ void CMaskRCNN::manageOutput(std::vector<cv::Mat> &netOutputs)
 {
     forwardInputImage(0, 1);
     manageMaskRCNNOutput(netOutputs);   
-    generateColorMap(netOutputs[0], false);
+    //generateColorMap(netOutputs[0], false);
+    setOutputColorMap(1, 0, m_colors);
 }
 
 void CMaskRCNN::manageMaskRCNNOutput(std::vector<cv::Mat> &netOutputs)
@@ -140,6 +145,10 @@ void CMaskRCNN::manageMaskRCNNOutput(std::vector<cv::Mat> &netOutputs)
     auto pGraphicsOutput = std::dynamic_pointer_cast<CGraphicsOutput>(getOutput(2));
     pGraphicsOutput->setNewLayer(getName());
     pGraphicsOutput->setImageIndex(1);
+
+    //Measures output
+    auto pMeasureOutput = std::dynamic_pointer_cast<CBlobMeasureIO>(getOutput(3));
+    pMeasureOutput->clearData();
 
     CMat imgSrc = pInput->getImage();
     cv::Mat labelImg = cv::Mat::zeros(imgSrc.rows, imgSrc.cols, CV_8UC1);
@@ -169,12 +178,17 @@ void CMaskRCNN::manageMaskRCNNOutput(std::vector<cv::Mat> &netOutputs)
             float height = bottom - top + 1;
 
             //Create rectangle graphics of bbox
-            pGraphicsOutput->addRectangle(left, top, width, height);
+            auto rectProperty = CGraphicsRectProperty();
+            rectProperty.m_penColor = {m_colors[classId+1][0], m_colors[classId+1][1], m_colors[classId+1][2]};
+            auto graphicsObj = pGraphicsOutput->addRectangle(left, top, width, height, rectProperty);
 
             //Retrieve class label
+            auto textProperty = CGraphicsTextProperty();
+            textProperty.m_color = {m_colors[classId+1][0], m_colors[classId+1][1], m_colors[classId+1][2]};
+            textProperty.m_fontSize = 8;
             std::string className = classId < m_classNames.size() ? m_classNames[classId] : "unknown " + std::to_string(classId);
             std::string label = className + " : " + std::to_string(confidence);
-            pGraphicsOutput->addText(label, left + 5, top + 5);
+            pGraphicsOutput->addText(label, left + 5, top + 5, textProperty);
 
             //Extract mask
             cv::Mat objMask(netOutputs[0].size[2], netOutputs[0].size[3], CV_32F, netOutputs[0].ptr<float>(n, classId));
@@ -190,6 +204,12 @@ void CMaskRCNN::manageMaskRCNNOutput(std::vector<cv::Mat> &netOutputs)
             //Merge object label mask to final label image
             cv::Mat roi = labelImg(cv::Rect(left, top, width, height));
             cv::bitwise_or(roi, objClassMask, roi);
+
+            //Store object values in result table
+            std::vector<CObjectMeasure> results;
+            results.emplace_back(CObjectMeasure(CMeasure(CMeasure::CUSTOM, QObject::tr("Confidence").toStdString()), confidence, graphicsObj->getId(), className));
+            results.emplace_back(CObjectMeasure(CMeasure::Id::BBOX, {left, top, width, height}, graphicsObj->getId(), className));
+            pMeasureOutput->addObjectMeasures(results);
         }
     }
 
@@ -198,27 +218,12 @@ void CMaskRCNN::manageMaskRCNNOutput(std::vector<cv::Mat> &netOutputs)
         pOutput->setImage(labelImg);
 }
 
-std::vector<cv::Vec3b> CMaskRCNN::generateColorMap(const cv::Mat &netOutput, bool bWithBackgroundClass)
+void CMaskRCNN::generateColors()
 {
-    int classCountDiff = 0;
-    int classCount = netOutput.size[1];
-    if(bWithBackgroundClass == false)
-        classCount++;
-
-    if(m_colors.size() >= (size_t)classCount)
-        return m_colors;
-    else
-    {
-        if(m_colors.empty())
-        {
-            //The label value 0 is reserved for background pixels
-            m_colors.push_back(cv::Vec3b(0, 0, 0));
-        }
-        classCountDiff = classCount - m_colors.size();
-    }
-
+    //The label value 0 is reserved for background pixels
+    m_colors.push_back(cv::Vec3b(0, 0, 0));
     //Random colors then
-    for(int i=1; i<classCountDiff; ++i)
+    for(size_t i=1; i<m_classNames.size(); ++i)
     {
         cv::Vec3b color;
         for(int j=0; j<3; ++j)
@@ -226,6 +231,4 @@ std::vector<cv::Vec3b> CMaskRCNN::generateColorMap(const cv::Mat &netOutput, boo
 
         m_colors.push_back(color);
     }
-    setOutputColorMap(1, 0, m_colors);
-    return m_colors;
 }
