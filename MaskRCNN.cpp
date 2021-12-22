@@ -177,18 +177,19 @@ void CMaskRCNN::manageMaskRCNNOutput(std::vector<cv::Mat> &netOutputs)
             float width = right - left + 1;
             float height = bottom - top + 1;
 
-            //Create rectangle graphics of bbox
-            auto rectProperty = CGraphicsRectProperty();
-            rectProperty.m_penColor = {m_colors[classId+1][0], m_colors[classId+1][1], m_colors[classId+1][2]};
-            auto graphicsObj = pGraphicsOutput->addRectangle(left, top, width, height, rectProperty);
-
             //Retrieve class label
-            auto textProperty = CGraphicsTextProperty();
+            CGraphicsTextProperty textProperty;
             textProperty.m_color = {m_colors[classId+1][0], m_colors[classId+1][1], m_colors[classId+1][2]};
             textProperty.m_fontSize = 8;
             std::string className = classId < m_classNames.size() ? m_classNames[classId] : "unknown " + std::to_string(classId);
             std::string label = className + " : " + std::to_string(confidence);
             pGraphicsOutput->addText(label, left + 5, top + 5, textProperty);
+
+            //Create rectangle graphics of bbox
+            CGraphicsRectProperty rectProperty;
+            rectProperty.m_category = className;
+            rectProperty.m_penColor = {m_colors[classId+1][0], m_colors[classId+1][1], m_colors[classId+1][2]};
+            auto graphicsObj = pGraphicsOutput->addRectangle(left, top, width, height, rectProperty);
 
             //Extract mask
             cv::Mat objMask(netOutputs[0].size[2], netOutputs[0].size[3], CV_32F, netOutputs[0].ptr<float>(n, classId));
