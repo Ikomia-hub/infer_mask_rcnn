@@ -91,7 +91,7 @@ class MASKRCNNSHARED_EXPORT CMaskRCNNFactory : public CTaskFactory
                                                "including the COCO 2016 challenge winners. We hope our simple and effective approach will serve as a solid baseline and "
                                                "help ease future research in instance-level recognition. Code will be made available.").toStdString();
             m_info.m_path = QObject::tr("Plugins/C++/Segmentation").toStdString();
-            m_info.m_version = "1.1.0";
+            m_info.m_version = "1.2.0";
             m_info.m_iconPath = "Icon/icon.png";
             m_info.m_authors = "Kaiming He, Georgia Gkioxari, Piotr Dollar, Ross Girshick";
             m_info.m_article = "Mask R-CNN";
