@@ -151,7 +151,7 @@ void CMaskRCNN::manageMaskRCNNOutput(std::vector<cv::Mat> &netOutputs)
 
             std::string className = classId < m_classNames.size() ? m_classNames[classId] : "unknown " + std::to_string(classId);
             CColor color = {m_colors[classId+1][0], m_colors[classId+1][1], m_colors[classId+1][2]};
-            instanceSegOutPtr->addInstance(classId, className, confidence, left, top, width, height, mask, color);
+            instanceSegOutPtr->addInstance(CInstanceSegmentation::ObjectType::THING, classId, className, confidence, left, top, width, height, mask, color);
         }
     }
 }
