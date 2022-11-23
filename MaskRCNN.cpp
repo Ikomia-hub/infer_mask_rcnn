@@ -66,6 +66,13 @@ void CMaskRCNN::run()
     pParam->m_modelFile = pluginDir + "/Model/frozen_inference_graph.pb";
     pParam->m_labelsFile = pluginDir + "/Model/coco_names.txt";
 
+    if (!Utils::File::isFileExist(pParam->m_modelFile))
+    {
+        std::cout << "Downloading model..." << std::endl;
+        std::string downloadUrl = Utils::Plugin::getModelHubUrl() + "/" + m_name + "/frozen_inference_graph.pb";
+        download(downloadUrl, pParam->m_modelFile);
+    }
+
     CMat imgSrc = pInput->getImage();
     std::vector<cv::Mat> netOutputs;
     emit m_signalHandler->doProgress();
