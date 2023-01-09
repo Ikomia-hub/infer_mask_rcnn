@@ -1,1 +1,3 @@
-MaskRCNN.pro.user
+infer_mask_rcnn.pro.user
+CMakeLists.txt.user
+build
