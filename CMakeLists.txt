@@ -34,7 +34,11 @@ find_package(OpenMP)
 
 # OpenCV
 if(WIN32)
-    set(OpenCV_DIR "C:/Program Files/OpenCV/cuda/x64/vc16/lib")
+    if(${IK_CPU})
+        set(OpenCV_DIR "C:/Program Files/OpenCV/cpu/x64/vc16/lib")
+    else()
+        set(OpenCV_DIR "C:/Program Files/OpenCV/cuda/x64/vc16/lib")
+    endif()
 endif()
 
 find_package(OpenCV ${OPENCV_VERSION} REQUIRED)
