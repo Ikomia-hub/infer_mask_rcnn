@@ -1,16 +1,15 @@
 #include "MaskRCNN.h"
 #include "IO/CInstanceSegIO.h"
 
-CMaskRCNN::CMaskRCNN() : COcvDnnProcess()
+CMaskRCNN::CMaskRCNN() : COcvDnnProcess(), CInstanceSegTask()
 {
     m_pParam = std::make_shared<CMaskRCNNParam>();
-    addOutput(std::make_shared<CInstanceSegIO>());
 }
 
-CMaskRCNN::CMaskRCNN(const std::string& name, const std::shared_ptr<CMaskRCNNParam> &pParam): COcvDnnProcess(name)
+CMaskRCNN::CMaskRCNN(const std::string& name, const std::shared_ptr<CMaskRCNNParam> &pParam)
+    : COcvDnnProcess(), CInstanceSegTask(name)
 {
     m_pParam = std::make_shared<CMaskRCNNParam>(*pParam);
-    addOutput(std::make_shared<CInstanceSegIO>());
 }
 
 size_t CMaskRCNN::getProgressSteps()
@@ -54,7 +53,10 @@ void CMaskRCNN::run()
     auto pInput = std::dynamic_pointer_cast<CImageIO>(getInput(0));
     auto pParam = std::dynamic_pointer_cast<CMaskRCNNParam>(m_pParam);
 
-    if(pInput == nullptr || pParam == nullptr)
+    if (pInput == nullptr)
+        throw CException(CoreExCode::INVALID_PARAMETER, "Invalid image input", __func__, __FILE__, __LINE__);
+
+    if(pInput == nullptr)
         throw CException(CoreExCode::INVALID_PARAMETER, "Invalid parameters", __func__, __FILE__, __LINE__);
 
     if(pInput->isDataAvailable() == false)
@@ -81,20 +83,16 @@ void CMaskRCNN::run()
     {
         if(m_net.empty() || pParam->m_bUpdate)
         {
-            m_net = readDnn();
+            m_net = readDnn(pParam);
             if(m_net.empty())
                 throw CException(CoreExCode::INVALID_PARAMETER, "Failed to load network", __func__, __FILE__, __LINE__);
 
+            readClassNames(pParam->m_labelsFile);
             pParam->m_bUpdate = false;
-
-            if(m_classNames.empty())
-                readClassNames();
-
-            generateColors();
         }
-        forward(imgSrc, netOutputs);
+        forward(imgSrc, netOutputs, pParam);
     }
-    catch(cv::Exception& e)
+    catch(std::exception& e)
     {
         throw CException(CoreExCode::INVALID_PARAMETER, e.what(), __func__, __FILE__, __LINE__);
     }
@@ -107,9 +105,7 @@ void CMaskRCNN::run()
 
 void CMaskRCNN::manageOutput(std::vector<cv::Mat> &netOutputs)
 {
-    forwardInputImage(0, 0);
     manageMaskRCNNOutput(netOutputs);   
-    setOutputColorMap(0, 1, m_colors);
 }
 
 void CMaskRCNN::manageMaskRCNNOutput(std::vector<cv::Mat> &netOutputs)
@@ -117,9 +113,6 @@ void CMaskRCNN::manageMaskRCNNOutput(std::vector<cv::Mat> &netOutputs)
     auto pParam = std::dynamic_pointer_cast<CMaskRCNNParam>(m_pParam);
     auto pInput = std::dynamic_pointer_cast<CImageIO>(getInput(0));
     CMat imgSrc = pInput->getImage();
-
-    auto instanceSegOutPtr = std::dynamic_pointer_cast<CInstanceSegIO>(getOutput(1));
-    instanceSegOutPtr->init(getName(), 0, imgSrc.cols, imgSrc.rows);
 
     int nbDetections = netOutputs[1].size[2];
     for(int n=0; n<nbDetections; ++n)
@@ -156,24 +149,7 @@ void CMaskRCNN::manageMaskRCNNOutput(std::vector<cv::Mat> &netOutputs)
             cv::Mat roi(mask, cv::Rect(left, top, width, height));
             objMaskBinary.copyTo(roi);
 
-            std::string className = classId < m_classNames.size() ? m_classNames[classId] : "unknown " + std::to_string(classId);
-            CColor color = {m_colors[classId+1][0], m_colors[classId+1][1], m_colors[classId+1][2]};
-            instanceSegOutPtr->addInstance(n, CInstanceSegmentation::ObjectType::THING, classId, className, confidence, left, top, width, height, mask, color);
+            addInstance(n, CInstanceSegmentation::ObjectType::THING, classId, confidence, left, top, width, height, mask);
         }
-    }
-}
-
-void CMaskRCNN::generateColors()
-{
-    //The label value 0 is reserved for background pixels
-    m_colors.push_back(cv::Vec3b(0, 0, 0));
-    //Random colors then
-    for(size_t i=1; i<m_classNames.size(); ++i)
-    {
-        cv::Vec3b color;
-        for(int j=0; j<3; ++j)
-            color[j] = (uchar)((double)std::rand() / (double)RAND_MAX * 255.0);
-
-        m_colors.push_back(color);
     }
 }

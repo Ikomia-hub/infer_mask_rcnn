@@ -27,6 +27,10 @@ include(${IKOMIA_CORE_DIR}/LocalSettings.cmake)
 find_package(Qt5 REQUIRED COMPONENTS Core Gui Sql Widgets)
 
 # Python
+if(CENTOS7)
+    set(Python3_DIR "/work/shared/local")
+endif()
+
 find_package(Python3 ${PYTHON_VERSION_DOT} EXACT REQUIRED COMPONENTS Interpreter Development NumPy)
 
 # OpenMP
@@ -47,7 +51,15 @@ find_package(OpenCV ${OPENCV_VERSION} REQUIRED)
 set(Boost_USE_STATIC_LIBS OFF)
 set(Boost_USE_MULTITHREADED ON)
 set(Boost_USE_STATIC_RUNTIME OFF)
-find_package(Boost REQUIRED COMPONENTS system filesystem python${PYTHON_VERSION_NO_DOT})
+
+if(CENTOS7)
+    set(BUILD_SHARED_LIBS ON)
+    set(BOOST_PYTHON_TARGET Boost::python)
+    find_package(Boost REQUIRED COMPONENTS system filesystem python)
+else()
+    set(BOOST_PYTHON_TARGET Boost::python${PYTHON_VERSION_NO_DOT})
+    find_package(Boost REQUIRED COMPONENTS system filesystem python${PYTHON_VERSION_NO_DOT})
+endif()
 
 add_library(infer_mask_rcnn SHARED
     MaskRCNN.cpp
@@ -109,7 +121,7 @@ target_link_libraries(infer_mask_rcnn PRIVATE
     OpenMP::OpenMP_CXX
     Python3::Python
     Boost::filesystem
-    Boost::python${PYTHON_VERSION_NO_DOT}
+    ${BOOST_PYTHON_TARGET}
     opencv_core
     opencv_dnn
     opencv_imgproc

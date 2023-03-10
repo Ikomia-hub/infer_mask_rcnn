@@ -4,7 +4,8 @@
 #include "MaskRCNNGlobal.h"
 #include "Process/OpenCV/dnn/COcvDnnProcess.h"
 #include "Widget/OpenCV/dnn/COcvWidgetDnnCore.h"
-#include "CPluginProcessInterface.hpp"
+#include "Task/CInstanceSegTask.h"
+#include "Core/CPluginProcessInterface.hpp"
 
 //--------------------------//
 //----- CMaskRCNNParam -----//
@@ -42,7 +43,7 @@ class MASKRCNNSHARED_EXPORT CMaskRCNNParam: public COcvDnnProcessParam
 //---------------------//
 //----- CMaskRCNN -----//
 //---------------------//
-class MASKRCNNSHARED_EXPORT CMaskRCNN: public COcvDnnProcess
+class MASKRCNNSHARED_EXPORT CMaskRCNN: public COcvDnnProcess, public CInstanceSegTask
 {
     public:
 
@@ -61,11 +62,6 @@ class MASKRCNNSHARED_EXPORT CMaskRCNN: public COcvDnnProcess
 
         void                    manageOutput(std::vector<cv::Mat> &netOutputs);
         void                    manageMaskRCNNOutput(std::vector<cv::Mat> &netOutputs);
-
-        void                    generateColors();
-
-    private:
-        std::vector<cv::Vec3b>  m_colors;
 };
 
 //----------------------------//
